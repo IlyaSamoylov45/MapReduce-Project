@@ -4,10 +4,12 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <errno.h>
+#include <algorithm>
 
-using namespace std;
-
-void check_values(string, string);
+void check_values(std::string, std::string);
 void parse_cmdline(int, char**);
-void real_int(string, string);
-void check_file(char*, string);
+void real_int(std::string, std::string);
+void check_file(char*, std::string);
+int count_words(std::string);
+void split_input(std::string, int);
+bool remove_char(char);
