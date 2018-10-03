@@ -14,4 +14,4 @@ void check_file(char*, std::string);
 int count_words(std::string);
 void split_input(std::string, int);
 bool remove_char(char);
-void map_words_to_array(std::string, int, int);
+std::vector<std::string> map_words_to_array(std::string, int, int);

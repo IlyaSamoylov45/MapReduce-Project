@@ -35,43 +35,37 @@ void split_input(std::string file, int maps){
   }
 
   std::cout << word_count << std::endl;
-  arymap_words_to_array(file, maps, word_count);
+  std::vector<std::string> ary = map_words_to_array(file, maps, word_count);
+  for (std::vector<std::string>::const_iterator i = ary.begin(); i != ary.end(); ++i)
+    std::cout << *i << '\n';
 }
 
-void map_words_to_array(std::string file, int total_maps, int total_words) {
+//returns a vector with words organized for each map_num if there are more numbers than can be divided then the modulo will check and set then to different threads.
+std::vector<std::string> map_words_to_array(std::string file, int total_maps, int total_words) {
   int words_per_map = total_words/total_maps;
   int remaining_words = total_words%total_maps;
 
-  //std::cout << words_per_map << std::endl;
-  //std::cout << remaining_words << std::endl;
 
   std::string word;
   std::ifstream infile(file.c_str());
 
-  std::string *ary[total_maps];
   int count = words_per_map;
   int current_map = 0;
-
-  int total = 0;
+  std::vector<std::string> ary(total_maps);
 
   if(remaining_words > 0){
     count++;
     remaining_words--;
   }
-  ary[current_map] = new std::string[count];
   while(infile >> word) {
     word.erase(std::remove_if(word.begin(), word.end(), remove_char), word.end());
     if(word != ""){
-      //std::cout <<" test" << std::endl;
       if(count > 0){
-        //std::cout <<" here" << std::endl;
-        ary[current_map][count - 1] = word;
-        //std::cout << ary[current_map][count - 1] << " : " << count << std::endl;
-        //std::cout << count << std::endl;
+        ary[current_map] = ary[current_map] + " " + word;
+        //std::cout << ary[current_map] << std::endl;
         count--;
       }
       else{
-        total++;
         //std::cout <<" else" << std::endl;
         count = words_per_map;
         if(remaining_words > 0){
@@ -79,15 +73,13 @@ void map_words_to_array(std::string file, int total_maps, int total_words) {
           remaining_words--;
         }
         current_map++;
-        ary[current_map] = new std::string[count];
-        ary[current_map][count - 1] = word;
-        //std::cout << ary[current_map][count - 1] << " : " << count << std::endl;
+        ary[current_map] = ary[current_map] + " " +  word;
+        //std::cout << ary[current_map] << std::endl;
         count--;
       }
     }
   }
-  //return ary;
-  //std::cout << total << std::endl;
+  return ary;
 }
 //counts the number of words in a file
 int count_words(std::string file){
