@@ -1,5 +1,10 @@
 #include "main.h"
 
+struct data {
+	int id;
+	std::string line_array;
+};
+pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 int main(int argc, char* argv[]){
 
   if(argc != 13){
@@ -22,11 +27,56 @@ int main(int argc, char* argv[]){
                                      << argv[9] << " " << infile << " "
                                      << argv[11] << " " << outfile << "\n" <<std::endl;
 
-  split_input(infile, maps);
+  std::vector<std::string> sorted_ary = split_input(infile, maps);
+  if(impl.compare("--threads")){
+    map_threads(sorted_ary, maps);
+  }
+  else{
+    //map_proc();
+  }
+  //print for error checking
+  //for (std::vector<std::string>::const_iterator i = sorted_ary.begin(); i != sorted_ary.end(); i++){
+  //  std::cout << *i << '\n';
+  //}
+  //
+}
+
+
+//map using threads
+void map_threads(std::vector<std::string> array, int maps){
+  pthread_t threads[maps];
+  int iret;
+  data thread_data[maps];
+  for(int i = 0; i < maps; i++){
+    //std::cout << "Creating thread: " << std::endl;
+    thread_data[i].id = i;
+    thread_data[i].line_array= array[i];
+    iret = pthread_create(&threads[i], NULL, map_function_thread, (void*) &thread_data[i]);
+    if (rc) {
+			std::cout << "Error: Creating thread: " << iret << std::endl;
+			exit(EXIT_FAILURE);
+		}
+  }
+  for (int i = 0; i < maps; i++) {
+		iret = pthread_join(threads[i], NULL);
+		if (iret) {
+			std::cout << "Error: Joining thread: " << iret << std::endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
+void *map_function_thread(void* thread) {
+	struct data *curr_thread_data;
+	curr_thread_data = (struct data *) thread;
+	pthread_mutex_lock(&lock1);
+  std::cout << curr_thread_data->id << " : " << curr_thread_data->line_array << std::endl;
+	pthread_mutex_unlock(&lock1);
+	//return 0;
 }
 
 //splits the input before sending to the map function
-void split_input(std::string file, int maps){
+std::vector<std::string> split_input(std::string file, int maps){
   int word_count = count_words(file);
   //if there are more maps than words return an error
   if(maps > word_count){
@@ -34,10 +84,14 @@ void split_input(std::string file, int maps){
     exit(EXIT_FAILURE);
   }
 
-  std::cout << word_count << std::endl;
+  std::cout << "Total words: " << word_count << std::endl;
   std::vector<std::string> ary = map_words_to_array(file, maps, word_count);
-  for (std::vector<std::string>::const_iterator i = ary.begin(); i != ary.end(); ++i)
-    std::cout << *i << '\n';
+  //print for error checking
+  //for (std::vector<std::string>::const_iterator i = ary.begin(); i != ary.end(); i++){
+  //  std::cout << *i << '\n';
+  //}
+  //
+  return ary;
 }
 
 //returns a vector with words organized for each map_num if there are more numbers than can be divided then the modulo will check and set then to different threads.
