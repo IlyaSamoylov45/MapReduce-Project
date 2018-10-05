@@ -2,16 +2,16 @@
 
 //This will hold threaddata
 struct ThreadData {
-	int id;
-	std::string line_array;
+    int id;
+    std::string line_array;
 };
 
 //Information from the mapReduce
 //the word is a key and the amount of times they show up is the occurances
 struct KV{
-	string key;
-	int occurance;
-}
+    std::string key;
+    int occurance;
+};
 
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
 std::vector<std::vector<KV>> List_Of_KV_Pairs;
@@ -31,11 +31,11 @@ int main(int argc, char* argv[]){
   std::string outfile = argv[12];
 
   std::cout << "\nCurrent arguments are " << argv[1] << " " << app << " "
-                                     << argv[3] << " " << impl << " "
-                                     << argv[5] << " " << maps << " "
-                                     << argv[7] << " " << reduces << " "
-                                     << argv[9] << " " << infile << " "
-                                     << argv[11] << " " << outfile << "\n" <<std::endl;
+                                     			<< argv[3] << " " << impl << " "
+                                     			<< argv[5] << " " << maps << " "
+                                     			<< argv[7] << " " << reduces << " "
+                                     			<< argv[9] << " " << infile << " "
+                                     			<< argv[11] << " " << outfile << "\n" <<std::endl;
 
   std::vector<std::string> sorted_ary = split_input(infile, maps);
   if(impl.compare("--threads")){
@@ -55,39 +55,39 @@ int main(int argc, char* argv[]){
 //map using threads
 void map_threads(std::vector<std::string> array, int maps){
   pthread_t threads[maps];
-  int iret;
+	int iret;
   ThreadData thread_data[maps];
   for(int i = 0; i < maps; i++){
     //std::cout << "Creating thread: " << std::endl;
     thread_data[i].id = i;
     thread_data[i].line_array= array[i];
     iret = pthread_create(&threads[i], NULL, map_function_thread, (void*) &thread_data[i]);
-    if (rc) {
-			std::cout << "Error: Creating thread: " << iret << std::endl;
-			exit(EXIT_FAILURE);
-		}
+    if (iret) {
+          std::cout << "Error: Creating thread: " << iret << std::endl;
+          exit(EXIT_FAILURE);
+    }
   }
-  for (int i = 0; i < maps; i++) {
-		iret = pthread_join(threads[i], NULL);
-		if (iret) {
-			std::cout << "Error: Joining thread: " << iret << std::endl;
-			exit(EXIT_FAILURE);
-		}
-	}
+  for(int i = 0; i < maps; i++){
+    iret = pthread_join(threads[i], NULL);
+		if(iret){
+      std::cout << "Error: Joining thread: " << iret << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
 }
 
-void *map_function_thread(void* thread) {
+void *map_function_thread(void* thread){
 	struct ThreadData *curr_thread_data;
-	curr_thread_data = (struct ThreadData *) thread;
+	curr_thread_data = (struct ThreadData *)thread;
 	pthread_mutex_lock(&lock1);
-  std::cout << curr_thread_data->id << " : " << curr_thread_data->line_array << std::endl;
+	std::cout << curr_thread_data->id << " : " << curr_thread_data->line_array << std::endl;
 	pthread_mutex_unlock(&lock1);
 	//return 0;
 }
 
 //splits the input before sending to the map function
 std::vector<std::string> split_input(std::string file, int maps){
-  int word_count = count_words(file);
+	int word_count = count_words(file);
   //if there are more maps than words return an error
   if(maps > word_count){
     std::cout << "More maps than there are words! You gave " << maps << " maps but there are only " << word_count << " words!" << "\n" << std::endl;
