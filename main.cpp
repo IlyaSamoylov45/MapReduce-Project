@@ -1,10 +1,20 @@
 #include "main.h"
 
-struct data {
+//This will hold threaddata
+struct ThreadData {
 	int id;
 	std::string line_array;
 };
+
+//Information from the mapReduce
+//the word is a key and the amount of times they show up is the occurances
+struct KV{
+	string key;
+	int occurance;
+}
+
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
+std::vector<std::vector<KV>> List_Of_KV_Pairs;
 int main(int argc, char* argv[]){
 
   if(argc != 13){
@@ -46,7 +56,7 @@ int main(int argc, char* argv[]){
 void map_threads(std::vector<std::string> array, int maps){
   pthread_t threads[maps];
   int iret;
-  data thread_data[maps];
+  ThreadData thread_data[maps];
   for(int i = 0; i < maps; i++){
     //std::cout << "Creating thread: " << std::endl;
     thread_data[i].id = i;
@@ -67,8 +77,8 @@ void map_threads(std::vector<std::string> array, int maps){
 }
 
 void *map_function_thread(void* thread) {
-	struct data *curr_thread_data;
-	curr_thread_data = (struct data *) thread;
+	struct ThreadData *curr_thread_data;
+	curr_thread_data = (struct ThreadData *) thread;
 	pthread_mutex_lock(&lock1);
   std::cout << curr_thread_data->id << " : " << curr_thread_data->line_array << std::endl;
 	pthread_mutex_unlock(&lock1);
