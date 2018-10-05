@@ -7,7 +7,8 @@
 #include <algorithm>
 #include <vector>
 #include <pthread.h>
-
+#include <map>
+#include <sstream>
 
 
 
@@ -21,3 +22,4 @@ bool remove_char(char);
 std::vector<std::string> map_words_to_array(std::string, int, int);
 void map_threads(std::vector<std::string>, int);
 void *map_function_thread(void*);
+std::vector<std::string> split_string_by_space(std::string);
