@@ -4,17 +4,18 @@
 struct ThreadData {
 	int id;
 	std::string line_array;
+	std::map<std::string, int> counter;
 };
 
 //Information from the mapReduce
 //the word is a key and the amount of times they show up is the occurances
 struct KV{
-	string key;
+	//string key;
 	int occurance;
-}
+};
 
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
-std::vector<std::vector<KV>> List_Of_KV_Pairs;
+//std::vector<std::vector<KV>> List_Of_KV_Pairs;
 int main(int argc, char* argv[]){
 
   if(argc != 13){
@@ -62,7 +63,7 @@ void map_threads(std::vector<std::string> array, int maps){
     thread_data[i].id = i;
     thread_data[i].line_array= array[i];
     iret = pthread_create(&threads[i], NULL, map_function_thread, (void*) &thread_data[i]);
-    if (rc) {
+    if (iret != 0) {
 			std::cout << "Error: Creating thread: " << iret << std::endl;
 			exit(EXIT_FAILURE);
 		}
@@ -79,8 +80,23 @@ void map_threads(std::vector<std::string> array, int maps){
 void *map_function_thread(void* thread) {
 	struct ThreadData *curr_thread_data;
 	curr_thread_data = (struct ThreadData *) thread;
+	
+	
+	std::vector<std::string> words = split_string_by_space(curr_thread_data->line_array);
+	std::map<std::string, int> counterMap = curr_thread_data->counter;
 	pthread_mutex_lock(&lock1);
-  std::cout << curr_thread_data->id << " : " << curr_thread_data->line_array << std::endl;
+	//std::cout << curr_thread_data->id << " : " << curr_thread_data->line_array << std::endl;
+	for(int i = 0; i < words.size(); i++){
+	  if(counterMap.count(words[i])){
+	    counterMap[words[i]] = counterMap[words[i]] + 1;
+	  } else {
+	    counterMap[words[i]] = 1;
+	  }
+	}
+	for(auto it = counterMap.begin(); it != counterMap.end(); it++){
+	  std::cout << it->first << " " << it->second << std::endl;
+	}
+	
 	pthread_mutex_unlock(&lock1);
 	//return 0;
 }
@@ -238,4 +254,15 @@ void check_file(char* filename, std::string correct){
     std::cout << "You wrote: " << filename << "\n" << std::endl;
     exit(EXIT_FAILURE);
   }
+}
+
+std::vector<std::string> split_string_by_space(std::string input){
+  std::string buf;
+  std::stringstream ss(input);
+  
+  std::vector<std::string> words;
+  while(ss >> buf)
+    words.push_back(buf);
+  
+  return words;
 }
