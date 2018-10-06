@@ -19,8 +19,6 @@ struct ThreadData {
     std::map<std::string, int> counter;
 };
 
-
-
 void check_values(std::string, std::string);
 void parse_cmdline(int, char**);
 void real_int(std::string, std::string);
@@ -32,3 +30,4 @@ std::vector<std::string> map_words_to_array(std::string, int, int);
 void map_threads(std::vector<std::string>, int, ThreadData[]);
 void *map_function_thread(void*);
 std::vector<std::string> split_string_by_space(std::string);
+std::map<std::string, int> reduce_threads(int, ThreadData[]);
