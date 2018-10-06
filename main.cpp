@@ -37,7 +37,12 @@ int main(int argc, char* argv[]){
   std::vector<std::string> sorted_ary = split_input(infile, maps);
   if(impl.compare("--threads")){
     map_threads(sorted_ary, maps, thread_data);
-    reduce_threads(reduces, maps, thread_data);
+    std::map<std::string, int> result = reduce_threads(reduces, maps, thread_data);
+    if(app.compare("wordcount") == 0){
+      wordCountPrint(result, outfile);
+    } else { // sort
+      sortPrint(result, outfile);
+    }
   }
   else{
     //map_proc();
@@ -371,4 +376,27 @@ std::vector<std::string> split_string_by_space(std::string input){
     words.push_back(buf);
   
   return words;
+}
+
+void wordCountPrint(std::map<std::string, int> result, std::string path) {
+  std::ofstream outputFile;
+  outputFile.open (path);
+  for(auto it = result.begin(); it != result.end(); it++){
+      outputFile << it->first << " " << it->second << "\n";
+  }
+  outputFile.close();
+}
+
+void sortPrint(std::map<std::string, int> result, std::string path) {
+  std::ofstream outputFile;
+  outputFile.open (path);
+  //numbers are already sorted
+  for(auto it = result.begin(); it != result.end(); it++){
+      //if there are dupes print all the dupes
+      for(int i = 0; i < it->second; i++){
+	outputFile << it->first << "\n";
+      }
+  }
+  outputFile.close();
+  
 }

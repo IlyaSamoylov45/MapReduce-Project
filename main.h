@@ -33,3 +33,5 @@ std::vector<std::string> split_string_by_space(std::string);
 std::map<std::string, int> reduce_threads(int, int, ThreadData[]);
 std::vector<std::vector<int>> assignJobs(int, int);
 void *reduce_function_thread(void*);
+void sortPrint(std::map<std::string, int>, std::string);
+void wordCountPrint(std::map<std::string, int>, std::string);
