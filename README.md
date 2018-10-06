@@ -2,7 +2,6 @@
 g++ main.cpp -o main -std++11 -lpthread 
 
 # TODO
-- make all input words lowercase
 - wordcount and sort for processes
 - make result pdf
 - test

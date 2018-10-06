@@ -250,6 +250,7 @@ std::vector<std::string> map_words_to_array(std::string file, int total_maps, in
   }
   while(infile >> word) {
     word.erase(std::remove_if(word.begin(), word.end(), remove_char), word.end());
+    std::transform(word.begin(), word.end(), word.begin(), ::tolower);
     if(word != ""){
       if(count > 0){
         ary[current_map] = ary[current_map] + " " + word;
@@ -392,8 +393,6 @@ void sortPrint(std::map<std::string, int> result, std::string path) {
   outputFile.open (path);
   std::map<int, int> convert; // convert all strings to int for sorting purposes
   for(auto it = result.begin(); it != result.end(); it++){
-    
-    
       int stringToInt = std::stoi(it->first);
       convert[stringToInt] = it->second;
   }
