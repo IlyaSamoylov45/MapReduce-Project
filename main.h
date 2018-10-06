@@ -9,6 +9,9 @@
 #include <pthread.h>
 #include <map>
 #include <sstream>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 
 
