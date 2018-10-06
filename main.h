@@ -9,8 +9,15 @@
 #include <pthread.h>
 #include <map>
 #include <sstream>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
 
-
+struct ThreadData {
+    int id;
+    std::string line_array;
+    std::map<std::string, int> counter;
+};
 
 void check_values(std::string, std::string);
 void parse_cmdline(int, char**);
@@ -20,6 +27,7 @@ int count_words(std::string);
 std::vector<std::string> split_input(std::string, int);
 bool remove_char(char);
 std::vector<std::string> map_words_to_array(std::string, int, int);
-void map_threads(std::vector<std::string>, int);
+void map_threads(std::vector<std::string>, int, ThreadData[]);
 void *map_function_thread(void*);
 std::vector<std::string> split_string_by_space(std::string);
+std::map<std::string, int> reduce_threads(int, ThreadData[]);
