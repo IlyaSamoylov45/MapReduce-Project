@@ -121,7 +121,7 @@ std::map<std::string, int> reduce_threads(int reduces, int maps, ThreadData thre
 		} */
       }
       for(auto it = resultMerged.begin(); it != resultMerged.end(); it++){
-		  std::cout << it->first << " " << it->second << std::endl;
+		  //std::cout << it->first << " " << it->second << std::endl;
       } 
      return resultMerged;
   
@@ -390,8 +390,16 @@ void wordCountPrint(std::map<std::string, int> result, std::string path) {
 void sortPrint(std::map<std::string, int> result, std::string path) {
   std::ofstream outputFile;
   outputFile.open (path);
-  //numbers are already sorted
+  std::map<int, int> convert; // convert all strings to int for sorting purposes
   for(auto it = result.begin(); it != result.end(); it++){
+    
+    
+      int stringToInt = std::stoi(it->first);
+      convert[stringToInt] = it->second;
+  }
+  
+  //numbers are already sorted
+  for(auto it = convert.begin(); it != convert.end(); it++){
       //if there are dupes print all the dupes
       for(int i = 0; i < it->second; i++){
 	outputFile << it->first << "\n";
