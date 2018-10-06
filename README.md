@@ -5,6 +5,7 @@ g++ main.cpp -o main -std++11 -lpthread
 - wordcount and sort for processes
 - make result pdf
 - test
+- fix file parser
 
 
 # impl
