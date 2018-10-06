@@ -10,7 +10,7 @@ struct ThreadData {
 //Information from the mapReduce
 //the word is a key and the amount of times they show up is the occurances
 struct KV{
-	//string key;
+	std::string key;
 	int occurance;
 };
 
