@@ -2,7 +2,15 @@
 
 //This will hold threaddata
 
+//Information from the mapReduce
+//the word is a key and the amount of times they show up is the occurances
+
 pthread_mutex_t lock1 = PTHREAD_MUTEX_INITIALIZER;
+
+struct ReduceThreadArgs {
+    std::vector<ThreadData> thread_data;
+    std::map<std::string, int> *resultMerged;
+};
 int main(int argc, char* argv[]){
 
   if(argc != 13){
@@ -29,7 +37,12 @@ int main(int argc, char* argv[]){
   std::vector<std::string> sorted_ary = split_input(infile, maps);
   if(impl.compare("--threads")){
     map_threads(sorted_ary, maps, thread_data);
-    //reduce_threds(reduces, thread_data);
+    std::map<std::string, int> result = reduce_threads(reduces, maps, thread_data);
+    if(app.compare("wordcount") == 0){
+      wordCountPrint(result, outfile);
+    } else { // sort
+      sortPrint(result, outfile);
+    }
   }
   else{
     //map_proc();
@@ -50,7 +63,6 @@ void map_threads(std::vector<std::string> array, int maps, ThreadData thread_dat
     //std::cout << "Creating thread: " << std::endl;
     thread_data[i].id = i;
     thread_data[i].line_array= array[i];
-    std::map<std::string, int> tempMap;
 
     iret = pthread_create(&threads[i], NULL, map_function_thread, (void*) &thread_data[i]);
     if (iret != 0) {
@@ -73,11 +85,68 @@ void map_threads(std::vector<std::string> array, int maps, ThreadData thread_dat
 
 }
 
-/*std::map<std::string, int> reduce_threds(int reduces, ThreadData thread_data[]){
+std::map<std::string, int> reduce_threads(int reduces, int maps, ThreadData thread_data[]){
+  if(maps < reduces) reduces = maps;
   std::map<std::string, int> resultMerged;
+  // Each reduce thread will get map_thread ids in order to know which
+  std::vector<std::vector<int>> mapJobs = assignJobs(reduces, maps);
   pthread_t threads[reduces];
 
-} */
+  int iret;
+  for(int i = 0; i < reduces; i++){
+    ReduceThreadArgs reduceThreadArgs;
+
+    std::vector<ThreadData> curData;
+    for(int j = 0 ; j < mapJobs[i].size(); j++){
+	curData.push_back(thread_data[mapJobs[i][j]]);
+    }
+    reduceThreadArgs.thread_data = curData;
+    reduceThreadArgs.resultMerged = &resultMerged;
+    iret = pthread_create(&threads[i], NULL, reduce_function_thread, (void*) &reduceThreadArgs);
+    if (iret != 0) {
+			std::cout << "Error: Creating thread: " << iret << std::endl;
+			exit(EXIT_FAILURE);
+    }
+  }
+    for (int i = 0; i < reduces; i++) {
+		iret = pthread_join(threads[i], NULL);
+		if (iret) {
+			std::cout << "Error: Joining thread: " << iret << std::endl;
+			exit(EXIT_FAILURE);
+		}
+		/*
+		std::map<std::string, int> testMap = thread_data[i].counter;
+		for(auto it = testMap.begin(); it != testMap.end(); it++){
+		  std::cout << it->first << " " << it->second << std::endl;
+		} */
+      }
+      for(auto it = resultMerged.begin(); it != resultMerged.end(); it++){
+		  //std::cout << it->first << " " << it->second << std::endl;
+      }
+     return resultMerged;
+
+}
+std::vector<std::vector<int>> assignJobs(int reduces, int maps){
+  std::vector<std::vector<int>> result;
+  int amount = maps / reduces;
+  int leftOver = maps % reduces;
+  int counter = 0;
+
+  for(int i = 0; i < reduces; i++){
+    std::vector<int> currentReduce;
+    for(int j = 0; j < amount; j++){
+      currentReduce.push_back(counter);
+      counter++;
+    }
+    result.push_back(currentReduce);
+  }
+  std::cout << result[0][1] << std::endl;
+  for(int i = 0; i < leftOver; i++){
+    result[i].push_back(counter);
+    counter++;
+  }
+  return result;
+}
 /*
  * maps words to frequencies and stores it into thread_data
  */
@@ -86,7 +155,6 @@ void *map_function_thread(void* thread) {
 	curr_thread_data = (struct ThreadData *) thread;
 
 	std::vector<std::string> words = split_string_by_space(curr_thread_data->line_array);
-
 	std::map<std::string, int> counterMap;
 
 	for(int i = 0; i < words.size(); i++){
@@ -101,8 +169,47 @@ void *map_function_thread(void* thread) {
 	curr_thread_data->counter = counterMap;
 	std::map<std::string, int> testMap = curr_thread_data->counter;
 	for(auto it = testMap.begin(); it != testMap.end(); it++){
-	  std::cout << it->first << " " << it->second << std::endl;
+	  //std::cout << it->first << " " << it->second << std::endl;
 	}
+}
+
+void *reduce_function_thread(void* thread) {
+  struct ReduceThreadArgs *curr_args;
+  curr_args = (struct ReduceThreadArgs *) thread;
+
+  std::map<std::string, int> mergeMap;
+  std::vector<ThreadData> curData = curr_args->thread_data;
+
+
+  for(int i = 0; i < curData.size(); i++){
+    std::map<std::string, int> curMap = curData[i].counter;
+
+    for(auto it = curMap.begin(); it != curMap.end(); it++){
+
+      if(mergeMap.count(it->first)){
+        mergeMap[it->first] = mergeMap[it->first] + it->second;
+      } else {
+        mergeMap[it->first] = it->second;
+      }
+
+    }
+  }
+
+  for(auto it = mergeMap.begin(); it != mergeMap.end(); it++){
+      //std::cout << it->first << " " <<  it->second << std::endl;
+    }
+
+
+  pthread_mutex_lock(&lock1);
+  for(auto it = mergeMap.begin(); it != mergeMap.end(); it++){
+      if(curr_args->resultMerged->count(it->first)){
+        curr_args->resultMerged->operator[](it->first) =  curr_args->resultMerged->operator[](it->first) + it->second;
+      } else {
+         curr_args->resultMerged->operator[](it->first) = it->second;
+      }
+  }
+  pthread_mutex_unlock(&lock1);
+
 }
 
 //splits the input before sending to the map function
@@ -143,6 +250,7 @@ std::vector<std::string> map_words_to_array(std::string file, int total_maps, in
   }
   while(infile >> word) {
     word.erase(std::remove_if(word.begin(), word.end(), remove_char), word.end());
+    std::transform(word.begin(), word.end(), word.begin(), ::tolower);
     if(word != ""){
       if(count > 0){
         ary[current_map] = ary[current_map] + " " + word;
@@ -225,7 +333,7 @@ void parse_cmdline(int argc, char *arr[]) {
   //check the argument values with -- in front
   check_values(arr[0], "--app");
   if(((std::string) arr[1]).compare("wordcount") != 0 && ((std::string) arr[1]).compare("sort") != 0){
-    std::cout << "\n" << "Usage is: --app [wordcount, sort] --impl [procs, threads] --maps num_maps --reduces num_reduces --input infile --output outfile" << std::endl;
+    std::cout << "\n" << "Usage is:--app [wordcount, sort] --impl [procs, threads] --maps num_maps --reduces num_reduces --input infile --output outfile" << std::endl;
     std::cout << "Error was in the argument " << "[wordcount, sort]" << std::endl;
     std::cout << "You wrote: " << arr[1] << "\n" << std::endl;
     exit(EXIT_FAILURE);
@@ -269,4 +377,33 @@ std::vector<std::string> split_string_by_space(std::string input){
     words.push_back(buf);
 
   return words;
+}
+
+void wordCountPrint(std::map<std::string, int> result, std::string path) {
+  std::ofstream outputFile;
+  outputFile.open (path);
+  for(auto it = result.begin(); it != result.end(); it++){
+      outputFile << it->first << " " << it->second << "\n";
+  }
+  outputFile.close();
+}
+
+void sortPrint(std::map<std::string, int> result, std::string path) {
+  std::ofstream outputFile;
+  outputFile.open (path);
+  std::map<int, int> convert; // convert all strings to int for sorting purposes
+  for(auto it = result.begin(); it != result.end(); it++){
+      int stringToInt = std::stoi(it->first);
+      convert[stringToInt] = it->second;
+  }
+
+  //numbers are already sorted
+  for(auto it = convert.begin(); it != convert.end(); it++){
+      //if there are dupes print all the dupes
+      for(int i = 0; i < it->second; i++){
+	outputFile << it->first << "\n";
+      }
+  }
+  outputFile.close();
+
 }
