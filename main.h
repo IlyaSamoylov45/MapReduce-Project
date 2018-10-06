@@ -30,4 +30,6 @@ std::vector<std::string> map_words_to_array(std::string, int, int);
 void map_threads(std::vector<std::string>, int, ThreadData[]);
 void *map_function_thread(void*);
 std::vector<std::string> split_string_by_space(std::string);
-std::map<std::string, int> reduce_threads(int, ThreadData[]);
+std::map<std::string, int> reduce_threads(int, int, ThreadData[]);
+std::vector<std::vector<int>> assignJobs(int, int);
+void *reduce_function_thread(void*);
