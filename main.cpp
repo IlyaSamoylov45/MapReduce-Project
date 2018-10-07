@@ -328,7 +328,7 @@ void map_proc(std::vector<std::string> array, int maps, ProcData proc_data[]){
 			sIdentifier = "Child Process:";
 			
 			//map part of shared memory for each process
-			mapped_region region(shm_obj, write, shm_size/i, shm_size);
+			mapped_region region(shm_obj, write, shm_size*i, shm_size);
 	
 			proc_data[i].id = i;
 			proc_data[i].line_array = array[i];
