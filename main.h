@@ -14,6 +14,12 @@
 #include <stdlib.h>
 #include <algorithm>
 
+struct ProcData {
+	int id;
+	std::string line_array;
+	std::map<std::string, int> counter;
+};
+
 struct ThreadData {
     int id;
     std::string line_array;
