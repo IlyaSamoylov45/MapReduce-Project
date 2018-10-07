@@ -20,6 +20,7 @@
 #include <sys/shm.h>
 #include <sys/stat.h>
 #include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/mapped_region.hpp>
 
 struct ProcData {
 	int id;
