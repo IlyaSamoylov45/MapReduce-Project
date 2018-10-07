@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
+#include <boost/interprocess/shared_memory_object.hpp>
 
 struct ProcData {
 	int id;
