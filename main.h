@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <algorithm>
-
+#include <sys/wait.h>
 struct ProcData {
 	int id;
 	std::string line_array;
@@ -43,3 +43,4 @@ std::vector<std::vector<int>> assignJobs(int, int);
 void *reduce_function_thread(void*);
 void sortPrint(std::map<std::string, int>, std::string);
 void wordCountPrint(std::map<std::string, int>, std::string);
+void map_function_proc(ProcData proc_data);

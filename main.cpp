@@ -94,16 +94,16 @@ std::map<std::string, int> reduce_threads(int reduces, int maps, ThreadData thre
   pthread_t threads[reduces];
 
   int iret;
+  ReduceThreadArgs reduceThreadArgs[reduces];
   for(int i = 0; i < reduces; i++){
-    ReduceThreadArgs reduceThreadArgs;
-
+    
     std::vector<ThreadData> curData;
     for(int j = 0 ; j < mapJobs[i].size(); j++){
 	curData.push_back(thread_data[mapJobs[i][j]]);
     }
-    reduceThreadArgs.thread_data = curData;
-    reduceThreadArgs.resultMerged = &resultMerged;
-    iret = pthread_create(&threads[i], NULL, reduce_function_thread, (void*) &reduceThreadArgs);
+    reduceThreadArgs[i].thread_data = curData;
+    reduceThreadArgs[i].resultMerged = &resultMerged;
+    iret = pthread_create(&threads[i], NULL, reduce_function_thread, (void*) &reduceThreadArgs[i]);
     if (iret != 0) {
 			std::cout << "Error: Creating thread: " << iret << std::endl;
 			exit(EXIT_FAILURE);
@@ -141,7 +141,6 @@ std::vector<std::vector<int>> assignJobs(int reduces, int maps){
     }
     result.push_back(currentReduce);
   }
-  std::cout << result[0][1] << std::endl;
   for(int i = 0; i < leftOver; i++){
     result[i].push_back(counter);
     counter++;
@@ -177,16 +176,14 @@ void *map_function_thread(void* thread) {
 void *reduce_function_thread(void* thread) {
   struct ReduceThreadArgs *curr_args;
   curr_args = (struct ReduceThreadArgs *) thread;
-
+  
   std::map<std::string, int> mergeMap;
   std::vector<ThreadData> curData = curr_args->thread_data;
 
-
   for(int i = 0; i < curData.size(); i++){
     std::map<std::string, int> curMap = curData[i].counter;
-
+    
     for(auto it = curMap.begin(); it != curMap.end(); it++){
-
       if(mergeMap.count(it->first)){
         mergeMap[it->first] = mergeMap[it->first] + it->second;
       } else {
@@ -195,12 +192,7 @@ void *reduce_function_thread(void* thread) {
 
     }
   }
-
-  for(auto it = mergeMap.begin(); it != mergeMap.end(); it++){
-      //std::cout << it->first << " " <<  it->second << std::endl;
-    }
-
-
+  
   pthread_mutex_lock(&lock1);
   for(auto it = mergeMap.begin(); it != mergeMap.end(); it++){
       if(curr_args->resultMerged->count(it->first)){
@@ -268,7 +260,7 @@ std::vector<std::string> map_words_to_array(std::string file, int total_maps, in
       }
       else{
         //std::cout <<" else" << std::endl;
-        std::cout << ary[current_map] << std::endl;
+        //std::cout << ary[current_map] << std::endl;
         count = words_per_map;
         if(remaining_words > 0){
           count++;
@@ -281,7 +273,7 @@ std::vector<std::string> map_words_to_array(std::string file, int total_maps, in
       }
     }
   }
-  std::cout << ary[current_map] << std::endl;
+  //std::cout << ary[current_map] << std::endl;
   return ary;
 }
 //counts the number of words in a file
@@ -309,17 +301,17 @@ int count_words(std::string file){
 }
 
 void map_proc(std::vector<std::string> array, int maps, ProcData proc_data[]){
-	string sIdentifier;
+	std::string sIdentifier;
 	pid_t pids[maps];
-	pid_t pid
+	pid_t pid;
 	int i;
 	int n = maps;
-
+	int status;
 	for(i = 0; i < n; i++)
 	{
 		if ((pids[i] = fork()) < 0)
 		{
-			cerr << "Error forking" << endl;
+			std::cerr << "Error forking" << std::endl;
 			exit(EXIT_FAILURE);
 		}
 		else if (pids[i] == 0)
@@ -440,9 +432,12 @@ std::vector<std::string> split_string_by_space(std::string input){
 void wordCountPrint(std::map<std::string, int> result, std::string path) {
   std::ofstream outputFile;
   outputFile.open (path);
+  int wordCountFinal = 0;
   for(auto it = result.begin(); it != result.end(); it++){
       outputFile << it->first << " " << it->second << "\n";
+      wordCountFinal += it->second;
   }
+  std::cout << "final word count " << wordCountFinal << std::endl;
   outputFile.close();
 }
 
