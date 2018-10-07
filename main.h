@@ -14,6 +14,12 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <sys/wait.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+
 struct ProcData {
 	int id;
 	std::string line_array;
