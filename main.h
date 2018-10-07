@@ -20,6 +20,7 @@ struct ProcData {
 	std::map<std::string, int> counter;
 };
 
+
 struct ThreadData {
     int id;
     std::string line_array;

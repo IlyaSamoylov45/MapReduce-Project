@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
                                      << argv[11] << " " << outfile << "\n" <<std::endl;
 
   std::vector<std::string> sorted_ary = split_input(infile, maps);
-  if(impl.compare("--threads")){
+  if(impl.compare("threads") == 0){
     map_threads(sorted_ary, maps, thread_data);
     std::map<std::string, int> result = reduce_threads(reduces, maps, thread_data);
     if(app.compare("wordcount") == 0){
@@ -45,6 +45,7 @@ int main(int argc, char* argv[]){
     }
   }
   else{
+    std::cout << "Process" << std::endl;
     //map_proc();
   }
   //print for error checking
@@ -300,7 +301,15 @@ std::vector<std::string> map_words_to_array(std::string file, int total_maps, in
     remaining_words--;
   }
   while(infile >> word) {
-    word.erase(std::remove_if(word.begin(), word.end(), remove_char), word.end());
+    std::replace( word.begin(), word.end(), '-', ' ');
+    std::replace( word.begin(), word.end(), ';', ' ');
+    std::replace( word.begin(), word.end(), '.', ' ');
+    std::replace( word.begin(), word.end(), ':', ' ');
+    std::replace( word.begin(), word.end(), '!', ' ');
+    std::replace( word.begin(), word.end(), ')', ' ');
+    std::replace( word.begin(), word.end(), ',', ' ');
+    //std::replace( word.begin(), word.end(), ';', ' ');
+    //word.erase(std::remove_if(word.begin(), word.end(), remove_char), word.end());
     std::transform(word.begin(), word.end(), word.begin(), ::tolower);
     if(word != ""){
       if(count > 0){
@@ -310,6 +319,7 @@ std::vector<std::string> map_words_to_array(std::string file, int total_maps, in
       }
       else{
         //std::cout <<" else" << std::endl;
+        std::cout << ary[current_map] << std::endl;
         count = words_per_map;
         if(remaining_words > 0){
           count++;
@@ -322,6 +332,7 @@ std::vector<std::string> map_words_to_array(std::string file, int total_maps, in
       }
     }
   }
+  std::cout << ary[current_map] << std::endl;
   return ary;
 }
 //counts the number of words in a file
@@ -330,23 +341,70 @@ int count_words(std::string file){
   std::string word;
   std::ifstream infile(file.c_str());
   while(infile >> word) {
-    word.erase(std::remove_if(word.begin(), word.end(), remove_char), word.end());
+    std::replace( word.begin(), word.end(), '-', ' ');
+    std::replace( word.begin(), word.end(), ';', ' ');
+    std::replace( word.begin(), word.end(), '.', ' ');
+    std::replace( word.begin(), word.end(), ':', ' ');
+    std::replace( word.begin(), word.end(), '!', ' ');
+    std::replace( word.begin(), word.end(), ')', ' ');
+    std::replace( word.begin(), word.end(), ',', ' ');
+    //std::replace( word.begin(), word.end(), ';', ' ');
+    //word.erase(std::remove_if(word.begin(), word.end(), remove_char), word.end());
     if(word != ""){
       count++;
     }
+
     //std::cout << "word is: " << word << " " << count << "\n";
   }
   return count;
 }
 
-//removes a character based on delimitors that were given in the announcement. Need to check if negative nums are allowed for int sort!
-bool remove_char(char test_character){
-  if(test_character == ' ' || test_character == '.' || test_character == ',' || test_character == ';' || test_character == ':'|| test_character == '!' || test_character == '-'){
-    return true;
-  }
-  else{
-    return false;
-  }
+void map_proc(std::vector<std::string> array, int maps, ProcData proc_data[]){
+	string sIdentifier;
+	pid_t pids[maps];
+	pid_t pid
+	int i;
+	int n = maps;
+
+	for(i = 0; i < n; i++)
+	{
+		if ((pids[i] = fork()) < 0)
+		{
+			cerr << "Error forking" << endl;
+			exit(EXIT_FAILURE);
+		}
+		else if (pids[i] == 0)
+		{
+			sIdentifier = "Child Process:";
+			proc_data[i].id = i;
+			proc_data[i].line_array = array[i];
+			map_function_proc(proc_data[i]);
+			exit(0); //exit cleanly
+		}
+		else if (pids[i] > 0)
+		{
+			sIdentifier = "Parent Process:";
+			pid = wait(&status);
+			printf("Child process %ld exited with status 0x%x. \n", long(pid), status);
+		}
+	}
+}
+
+void map_function_proc(ProcData proc_data) {
+	std::vector<std::string> words = split_string_by_space(proc_data.line_array);
+	std::map<std::string, int> counterMap;
+
+	for(int i = 0; i < words.size(); i++)
+	{
+		if(counterMap.count(words[i]))
+		{
+			counterMap[words[i]] = counterMap[words[i]] + 1;
+		} else
+		{
+			counterMap[words[i]] = 1;
+		}
+	}
+	proc_data.counter = counterMap;
 }
 
 //checks to see if two values are the same for "--app" type values
