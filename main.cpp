@@ -127,57 +127,6 @@ std::map<std::string, int> reduce_threads(int reduces, int maps, ThreadData thre
      return resultMerged;
 
 }
-void map_proc(std::vector<std::string> array, int maps, ProcData proc_data[])
-{
-	string sIdentifier;
-	pid_t pids[maps];
-	pid_t pid
-	int i;
-	int n = maps;
-
-	for(i = 0; i < n; i++)
-	{
-		if ((pids[i] = fork()) < 0) 
-		{
-			cerr << "Error forking" << endl;
-			exit(EXIT_FAILURE);
-		} 
-		else if (pids[i] == 0)
-		{
-			sIdentifier = "Child Process:";
-			proc_data[i].id = i;
-			proc_data[i].line_array = array[i];
-			map_function_proc(proc_data[i]);
-			exit(0); //exit cleanly
-		}
-		else if (pids[i] > 0)
-		{
-			sIdentifier = "Parent Process:";
-			pid = wait(&status);
-			printf("Child process %ld exited with status 0x%x. \n", long(pid), status); 
-		}
-	}
-}
-
-void map_function_proc(ProcData proc_data) 
-{
-	std::vector<std::string> words = split_string_by_space(proc_data.line_array);
-	std::map<std::string, int> counterMap;
-	
-	for(int i = 0; i < words.size(); i++)
-	{
-		if(counterMap.count(words[i]))
-		{
-			counterMap[words[i]] = counterMap[words[i]] + 1;
-		} else
-		{
-			counterMap[words[i]] = 1;
-		}
-	}	
-	proc_data.counter = counterMap;
-}
-
-
 std::vector<std::vector<int>> assignJobs(int reduces, int maps){
   std::vector<std::vector<int>> result;
   int amount = maps / reduces;
