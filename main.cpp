@@ -26,6 +26,12 @@ int main(int argc, char* argv[]){
   std::string infile = argv[10];
   std::string outfile = argv[12];
   ThreadData thread_data[maps];
+  //create shared memory for proc
+  //TODO determine size of shared memory, set to 10000 because idk how big it should be lol
+  int SHAREDMEMSIZE = 10000;	
+  using boost::interprocess;
+  shared_memory_object shm_obj (create_only, "shared_memory", read_write);
+  shm_obj.truncate(SHAREDMEMSIZE);
 
   std::cout << "\nCurrent arguments are " << argv[1] << " " << app << " "
                                      << argv[3] << " " << impl << " "
@@ -307,6 +313,9 @@ void map_proc(std::vector<std::string> array, int maps, ProcData proc_data[]){
 	int i;
 	int n = maps;
 	int status;
+	int shm_size = SHAREDMEMSIZE/maps; //size of shared memeory each process gets
+	//TODO maybe? handle remainder from division ^
+	
 	for(i = 0; i < n; i++)
 	{
 		if ((pids[i] = fork()) < 0)
@@ -317,21 +326,28 @@ void map_proc(std::vector<std::string> array, int maps, ProcData proc_data[]){
 		else if (pids[i] == 0)
 		{
 			sIdentifier = "Child Process:";
+			
+			//map part of shared memory for each process
+			mapped_region region(shm_obj, write, shm_size/i, shm_size);
+	
 			proc_data[i].id = i;
 			proc_data[i].line_array = array[i];
-			map_function_proc(proc_data[i]);
+			map_function_proc(proc_data[i], region);
 			exit(0); //exit cleanly
 		}
 		else if (pids[i] > 0)
 		{
 			sIdentifier = "Parent Process:";
 			pid = wait(&status);
+			
+			//remove shared memory
+			shm_remove() {shared_memory_object::remove("shared_memory");
 			printf("Child process %ld exited with status 0x%x. \n", long(pid), status);
 		}
 	}
 }
 
-void map_function_proc(ProcData proc_data) {
+void map_function_proc(ProcData proc_data, mapped_region region) {
 	std::vector<std::string> words = split_string_by_space(proc_data.line_array);
 	std::map<std::string, int> counterMap;
 
@@ -346,6 +362,9 @@ void map_function_proc(ProcData proc_data) {
 		}
 	}
 	proc_data.counter = counterMap;
+	
+	//write proc_data to shared memory so parent process can read it
+	std::memset(region.get_address(), proc_data, region.get_size());
 }
 
 //checks to see if two values are the same for "--app" type values
