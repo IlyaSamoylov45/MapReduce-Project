@@ -340,6 +340,8 @@ void map_proc(std::vector<std::string> array, int maps, ProcData proc_data[]){
 			sIdentifier = "Parent Process:";
 			pid = wait(&status);
 			
+			//reduce_proc(reduces, maps); //TODO
+				
 			//remove shared memory
 			shm_remove() {shared_memory_object::remove("shared_memory");
 			printf("Child process %ld exited with status 0x%x. \n", long(pid), status);
@@ -362,11 +364,45 @@ void map_function_proc(ProcData proc_data, mapped_region region) {
 		}
 	}
 	proc_data.counter = counterMap;
-	
+	//Need semaphore?
 	//write proc_data to shared memory so parent process can read it
 	std::memset(region.get_address(), proc_data, region.get_size());
 }
 
+	
+/* TODO
+void reduce_proc(int reduces, int maps)
+{
+	if(maps < reduces) reduces = maps;
+	std::map<std::string, int> resultsMerged;
+	std::vector<std::vector<int>> mapJobs = assignJobs(reduces, maps);
+	
+	
+	//open all of the shared memory with read write priveledge
+	shared_memory_object shm_obj (open_only, "shared_memory", read_write);
+	
+	//Map all of the shared memory, with read only priv
+	mapped_region region (shm_obj, read only);
+	
+	//addr is a pointer to the beginning of the shared memory
+	void* addr = region.get_address();
+	
+	for(int i=0; i<reduces; i++)
+	{
+		std::vector<ProcData> curData;
+		for(int j= 0; j< mapJobs[i].size();j++;)
+		{
+			curData.push_back([mapJobs[i][j]);
+		}
+		reduceProcArgs[i].proc_data = curData;
+		reduceProcArgs[i].resultsMerged = 
+		
+	}
+
+}
+
+*/
+	
 //checks to see if two values are the same for "--app" type values
 void check_values(std::string value, std::string correct){
   if(value.compare(correct) != 0){
