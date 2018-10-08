@@ -21,6 +21,9 @@
 #include <sys/stat.h>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+const int SHAREDMEMSIZE = 10000;
+using namespace boost::interprocess;
 
 struct ProcData {
 	int id;
@@ -51,4 +54,8 @@ std::vector<std::vector<int>> assignJobs(int, int);
 void *reduce_function_thread(void*);
 void sortPrint(std::map<std::string, int>, std::string);
 void wordCountPrint(std::map<std::string, int>, std::string);
-void map_function_proc(ProcData proc_data);
+void *map_function_proc(void*);
+void map_proc(std::vector<std::string>, int, ProcData[]);
+
+std::map<std::string, int> reduce_proc(int, int, ProcData[]);
+void *reduce_function_proc(void*);

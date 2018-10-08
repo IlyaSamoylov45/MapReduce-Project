@@ -11,6 +11,7 @@ struct ReduceThreadArgs {
     std::vector<ThreadData> thread_data;
     std::map<std::string, int> *resultMerged;
 };
+
 int main(int argc, char* argv[]){
 
   if(argc != 13){
@@ -26,12 +27,7 @@ int main(int argc, char* argv[]){
   std::string infile = argv[10];
   std::string outfile = argv[12];
   ThreadData thread_data[maps];
-  //create shared memory for proc
-  //TODO determine size of shared memory, set to 10000 because idk how big it should be lol
-  int SHAREDMEMSIZE = 10000;	
-  using boost::interprocess;
-  shared_memory_object shm_obj (create_only, "shared_memory", read_write);
-  shm_obj.truncate(SHAREDMEMSIZE);
+  ProcData proc_data[maps];
 
   std::cout << "\nCurrent arguments are " << argv[1] << " " << app << " "
                                      << argv[3] << " " << impl << " "
@@ -43,6 +39,8 @@ int main(int argc, char* argv[]){
   std::vector<std::string> sorted_ary = split_input(infile, maps);
   if(impl.compare("threads") == 0){
     map_threads(sorted_ary, maps, thread_data);
+    std::cout << "Finished mapping Threads" << std::endl;
+    //std::cout << thread_data[0].line_array << std::endl;
     std::map<std::string, int> result = reduce_threads(reduces, maps, thread_data);
     if(app.compare("wordcount") == 0){
       wordCountPrint(result, outfile);
@@ -51,8 +49,16 @@ int main(int argc, char* argv[]){
     }
   }
   else{
-    std::cout << "Process" << std::endl;
-    //map_proc();
+    map_proc(sorted_ary, maps, proc_data);
+    std::cout << "Finished mapping Processes" << std::endl;
+    std::cout << proc_data[0].line_array << std::endl;
+    //std::map<std::string, int> result = reduce_threads(reduces, maps, thread_data);
+    //std::cout << "Process" << std::endl;
+    //if(app.compare("wordcount") == 0){
+    //  wordCountPrint(result, outfile);
+    //} else { // sort
+    //  sortPrint(result, outfile);
+    //}
   }
   //print for error checking
   //for (std::vector<std::string>::const_iterator i = sorted_ary.begin(); i != sorted_ary.end(); i++){
@@ -102,7 +108,7 @@ std::map<std::string, int> reduce_threads(int reduces, int maps, ThreadData thre
   int iret;
   ReduceThreadArgs reduceThreadArgs[reduces];
   for(int i = 0; i < reduces; i++){
-    
+
     std::vector<ThreadData> curData;
     for(int j = 0 ; j < mapJobs[i].size(); j++){
 	curData.push_back(thread_data[mapJobs[i][j]]);
@@ -182,13 +188,13 @@ void *map_function_thread(void* thread) {
 void *reduce_function_thread(void* thread) {
   struct ReduceThreadArgs *curr_args;
   curr_args = (struct ReduceThreadArgs *) thread;
-  
+
   std::map<std::string, int> mergeMap;
   std::vector<ThreadData> curData = curr_args->thread_data;
 
   for(int i = 0; i < curData.size(); i++){
     std::map<std::string, int> curMap = curData[i].counter;
-    
+
     for(auto it = curMap.begin(); it != curMap.end(); it++){
       if(mergeMap.count(it->first)){
         mergeMap[it->first] = mergeMap[it->first] + it->second;
@@ -198,7 +204,7 @@ void *reduce_function_thread(void* thread) {
 
     }
   }
-  
+
   pthread_mutex_lock(&lock1);
   for(auto it = mergeMap.begin(); it != mergeMap.end(); it++){
       if(curr_args->resultMerged->count(it->first)){
@@ -310,99 +316,75 @@ void map_proc(std::vector<std::string> array, int maps, ProcData proc_data[]){
 	std::string sIdentifier;
 	pid_t pids[maps];
 	pid_t pid;
-	int i;
-	int n = maps;
+
+  //Remove if parent
+  shared_memory_object::remove("shared_memory");
+	// create a new SHM object and allocate space
+	//managed_shared_memory managed_shm(open_or_create, "my_shm", 1024);
+
+  shared_memory_object shm_obj(create_only, "shared_memory", read_write);
+  shm_obj.truncate(SHAREDMEMSIZE);
+
 	int status;
-	int shm_size = SHAREDMEMSIZE/maps; //size of shared memeory each process gets
-	//TODO maybe? handle remainder from division ^
-	
-	for(i = 0; i < n; i++)
-	{
-		if ((pids[i] = fork()) < 0)
-		{
+  int shm_size = SHAREDMEMSIZE/maps; //size of shared memory each process arguments
+  //TODO maybe? handle remainder from division
+	for(int i = 0; i < maps; i++){
+		if ((pids[i] = fork()) < 0){
 			std::cerr << "Error forking" << std::endl;
 			exit(EXIT_FAILURE);
 		}
-		else if (pids[i] == 0)
-		{
+		else if (pids[i] == 0){
 			sIdentifier = "Child Process:";
-			
-			//map part of shared memory for each process
-			mapped_region region(shm_obj, write, shm_size*i, shm_size);
-	
+
+      //map part of shared memory for each process
+      //mapped_region region(shm_obj, read_write, shm_size/i, shm_size - shm_size/i);
+      mapped_region region(shm_obj, read_write, shm_size*i, shm_size);
+
 			proc_data[i].id = i;
 			proc_data[i].line_array = array[i];
-			map_function_proc(proc_data[i], region);
+			map_function_proc((void*) &proc_data[i]);
 			exit(0); //exit cleanly
 		}
-		else if (pids[i] > 0)
-		{
+		else if (pids[i] > 0){
 			sIdentifier = "Parent Process:";
 			pid = wait(&status);
-			
-			//reduce_proc(reduces, maps); //TODO
-				
-			//remove shared memory
-			shm_remove() {shared_memory_object::remove("shared_memory");
+      shared_memory_object::remove("shared_memory");
+
 			printf("Child process %ld exited with status 0x%x. \n", long(pid), status);
 		}
 	}
+
+
 }
 
-void map_function_proc(ProcData proc_data, mapped_region region) {
-	std::vector<std::string> words = split_string_by_space(proc_data.line_array);
-	std::map<std::string, int> counterMap;
+void *map_function_proc(void* proc) {
+  struct ProcData *curr_proc_data;
+	curr_proc_data = (struct ProcData *) proc;
+  /**
 
-	for(int i = 0; i < words.size(); i++)
-	{
-		if(counterMap.count(words[i]))
-		{
+  /Need semaphore?
+	//write proc_data to shared memory so parent process can read it
+  std::memset(region, curr_proc_data, size);
+
+  **/
+	std::vector<std::string> words = split_string_by_space(curr_proc_data->line_array);
+	std::map<std::string, int> counterMap;
+  //std::cout <<  curr_proc_data->line_array << std::endl;
+	for(int i = 0; i < words.size(); i++){
+		if(counterMap.count(words[i])){
 			counterMap[words[i]] = counterMap[words[i]] + 1;
-		} else
-		{
+		}
+    else{
 			counterMap[words[i]] = 1;
 		}
 	}
-	proc_data.counter = counterMap;
-	//Need semaphore?
-	//write proc_data to shared memory so parent process can read it
-	std::memset(region.get_address(), proc_data, region.get_size());
-}
-
-	
-/* TODO
-void reduce_proc(int reduces, int maps)
-{
-	if(maps < reduces) reduces = maps;
-	std::map<std::string, int> resultsMerged;
-	std::vector<std::vector<int>> mapJobs = assignJobs(reduces, maps);
-	
-	
-	//open all of the shared memory with read write priveledge
-	shared_memory_object shm_obj (open_only, "shared_memory", read_write);
-	
-	//Map all of the shared memory, with read only priv
-	mapped_region region (shm_obj, read only);
-	
-	//addr is a pointer to the beginning of the shared memory
-	void* addr = region.get_address();
-	
-	for(int i=0; i<reduces; i++)
-	{
-		std::vector<ProcData> curData;
-		for(int j= 0; j< mapJobs[i].size();j++;)
-		{
-			curData.push_back([mapJobs[i][j]);
-		}
-		reduceProcArgs[i].proc_data = curData;
-		reduceProcArgs[i].resultsMerged = 
-		
+	curr_proc_data->counter = counterMap;
+  std::map<std::string, int> testMap = curr_proc_data->counter;
+  for(auto it = testMap.begin(); it != testMap.end(); it++){
+	  std::cout << it->first << " " << it->second << std::endl;
 	}
-
 }
 
-*/
-	
 //checks to see if two values are the same for "--app" type values
 void check_values(std::string value, std::string correct){
   if(value.compare(correct) != 0){
@@ -432,6 +414,41 @@ void real_int(std::string num, std::string correct){
     exit(EXIT_FAILURE);
   }
 }
+
+
+/* TODO
+void reduce_proc(int reduces, int maps)
+{
+	if(maps < reduces) reduces = maps;
+	std::map<std::string, int> resultsMerged;
+	std::vector<std::vector<int>> mapJobs = assignJobs(reduces, maps);
+
+
+	//open all of the shared memory with read write priveledge
+	shared_memory_object shm_obj (open_only, "shared_memory", read_write);
+
+	//Map all of the shared memory, with read only priv
+	mapped_region region (shm_obj, read only);
+
+	//addr is a pointer to the beginning of the shared memory
+	void* addr = region.get_address();
+
+	for(int i=0; i<reduces; i++)
+	{
+		std::vector<ProcData> curData;
+		for(int j= 0; j< mapJobs[i].size();j++;)
+		{
+			curData.push_back([mapJobs[i][j]);
+		}
+		reduceProcArgs[i].proc_data = curData;
+		reduceProcArgs[i].resultsMerged =
+
+	}
+}
+*/
+
+
+
 
 //pass arg pointer and set all values
 void parse_cmdline(int argc, char *arr[]) {
