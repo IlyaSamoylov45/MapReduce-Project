@@ -50,16 +50,17 @@ int main(int argc, char* argv[]){
   }
   if(impl.compare("procs") == 0){
     map_proc(sorted_ary, maps, proc_data);
-		std::map<std::strings, int> result = proc_data[0].line_array;
-		if(app.compare("wordcount") == 0)
-		{
-			wordCountPrint(result, outfile);
-		} else {
-			sortPrint(result, outfile);	
-		}
+	  
+		//std::map<std::strings, int> result = proc_data[0].line_array;
+		//if(app.compare("wordcount") == 0)
+		//{
+		//	wordCountPrint(result, outfile);
+		//} else {
+		//	sortPrint(result, outfile);	
+		//}
 	  
     std::cout << "Finished mapping Processes" << std::endl;
-    //std::cout << proc_data[0].line_array << std::endl;
+    std::cout << proc_data[0].line_array << std::endl;
     //std::map<std::string, int> result = reduce_threads(reduces, maps, thread_data);
     //std::cout << "Process" << std::endl;
     //if(app.compare("wordcount") == 0){
