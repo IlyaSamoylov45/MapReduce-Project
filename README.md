@@ -1,5 +1,5 @@
 # project1
-g++ main.cpp -o main -std++11 -lpthread 
+g++ main.cpp -o main -std++11 -lpthread -lrt
 
 # TODO
 - wordcount and sort for processes
