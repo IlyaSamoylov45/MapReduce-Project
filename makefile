@@ -1,2 +1,2 @@
 main: main.cpp
-	g++ main.cpp -o main -std=c++11 -lpthread -lrt
+	g++ main.cpp -o mapred -std=c++11 -lpthread -lrt
