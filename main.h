@@ -22,7 +22,9 @@
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
-const int SHAREDMEMSIZE = 10000;
+#include <boost/interprocess/allocators/allocator.hpp>
+#include <boost/interprocess/containers/map.hpp>
+const int SHAREDMEMSIZE = 655360;
 using namespace boost::interprocess;
 
 struct ProcData {
