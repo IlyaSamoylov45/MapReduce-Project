@@ -505,6 +505,15 @@ void wordCountPrint(std::map<std::string, int> result, std::string path) {
   std::ofstream outputFile;
   outputFile.open (path);
   int wordCountFinal = 0;
+  //first print numbers
+  for(auto it = result.begin(); it != result.end(); it++){
+    if(is_number(it->first)){
+      outputFile << it->first << " " << it->second << "\n";
+      wordCountFinal += it->second;
+      result.erase(it->first);
+    } 
+  }
+  // next words
   for(auto it = result.begin(); it != result.end(); it++){
       outputFile << it->first << " " << it->second << "\n";
       wordCountFinal += it->second;
@@ -532,3 +541,10 @@ void sortPrint(std::map<std::string, int> result, std::string path) {
   outputFile.close();
 
 }
+bool is_number(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
+}
+

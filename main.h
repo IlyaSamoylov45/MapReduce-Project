@@ -59,3 +59,4 @@ void map_proc(std::vector<std::string>, int, ProcData[]);
 
 std::map<std::string, int> reduce_proc(int, int, ProcData[]);
 void *reduce_function_proc(void*);
+bool is_number(const std::string&);
